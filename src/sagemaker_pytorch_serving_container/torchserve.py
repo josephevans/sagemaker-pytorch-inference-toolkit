@@ -73,9 +73,8 @@ def start_torchserve(handler_service=DEFAULT_HANDLER_SERVICE):
     if ENABLE_MULTI_MODEL:
         if "SAGEMAKER_HANDLER" not in os.environ:
             os.environ["SAGEMAKER_HANDLER"] = handler_service
-        _set_python_path()
-    else:
-        _adapt_to_ts_format(handler_service)
+
+    _set_python_path()
 
     _create_torchserve_config_file()
 
@@ -92,7 +91,7 @@ def start_torchserve(handler_service=DEFAULT_HANDLER_SERVICE):
         "--log-config",
         DEFAULT_TS_LOG_FILE,
         "--models",
-        "model.mar"
+        "model={}".format(environment.model_dir)
     ]
 
     print(ts_torchserve_cmd)
@@ -105,30 +104,6 @@ def start_torchserve(handler_service=DEFAULT_HANDLER_SERVICE):
     _add_sigterm_handler(ts_process)
 
     ts_process.wait()
-
-
-def _adapt_to_ts_format(handler_service):
-    if not os.path.exists(DEFAULT_TS_MODEL_DIRECTORY):
-        os.makedirs(DEFAULT_TS_MODEL_DIRECTORY)
-
-    model_archiver_cmd = [
-        "torch-model-archiver",
-        "--model-name",
-        DEFAULT_TS_MODEL_NAME,
-        "--handler",
-        handler_service,
-        "--export-path",
-        DEFAULT_TS_MODEL_DIRECTORY,
-        "--version",
-        "1",
-        "--extra-files",
-        os.path.join(environment.model_dir)
-    ]
-
-    logger.info(model_archiver_cmd)
-    subprocess.check_call(model_archiver_cmd)
-
-    _set_python_path()
 
 
 def _set_python_path():
